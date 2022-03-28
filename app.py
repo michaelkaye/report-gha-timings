@@ -28,8 +28,11 @@ def create_app():
     # POST request with body of JSON
     json = request.json
     result = report.parse(json)
-    report.write(result)
-    return "{}"
+    if result is not None:
+      report.write(result)
+      return "{}"
+    else:
+      return '{"found":"no workflow_job"}'
   
   @app.cli.command("initdb")
   def init_db():

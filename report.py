@@ -48,6 +48,9 @@ class Report:
         return (int)((b-a).total_seconds())
   
   def parse(self, json):
+     if not 'workflow_job' in json:
+         return None
+
      repository = json['repository']['full_name']
      job_id = json['workflow_job']['id']
      job_name = json['workflow_job']['name']
