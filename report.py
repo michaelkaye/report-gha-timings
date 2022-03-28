@@ -10,7 +10,7 @@ import json
 
 import flask
 from flask import Flask, render_template, request, Response
-from flaskext.mysql import MySQL
+import sqlite3
 
 
 
@@ -23,14 +23,20 @@ class Result:
        self.job_run_time = job_run_time
        self.job_start_time = job_start_time
 
+   def __str__(self):
+       return f"{self.job_id} {self.repository}/{self.job_name} {self.job_result} {self.job_start_time}->{self.job_run_time}"
+
 class Report:
+  def __init__(self):
+     self.sqlite_db = None
 
-
-  def __init__(self, mysql):
-    self.mysql = mysql
-  
   def init_app(self, app):
-     return 
+     self.sqlite_db = app.config['SQLITE3_DB']
+     app.report = self
+     self.init_db()
+ 
+  def set_db(self, sqlite_db):
+     self.sqlite_db = sqlite_db
   
   def diff_times(self, start, end):
      FORMAT="%Y-%m-%dT%H:%M:%S.%fZ"
@@ -53,9 +59,30 @@ class Report:
   
   
   def write(self, result):
-     conn = self.mysql.connect()
-     cursor = conn.cursor()
-     cursor.execute("DELETE FROM history WHERE job_id = ?", result.job_id)
-     cursor.execute("INSERT INTO history (job_id, repository, job_name, job_result, job_run_time, job_start_time) VALUES (?,?,?,?,?,?)", result.job_id, result.repository, result.job_name, result.job_result, result.job_run_time, result.job_start_time)
+     print("deleting result ", result)
+     conn = sqlite3.connect(self.sqlite_db)
+     conn.execute("DELETE FROM history WHERE job_id = ?", (result.job_id,))
+     conn.execute("INSERT INTO history (job_id, repository, job_name, job_result, job_run_time, job_start_time) VALUES (?,?,?,?,?,?)", (result.job_id, result.repository, result.job_name, result.job_result, result.job_run_time, result.job_start_time))
+     conn.commit()
+
+
+  def write_all(self, results):
+     conn = sqlite3.connect(self.sqlite_db)
+     for result in results:
+       conn.execute("DELETE FROM history WHERE job_id = ?", (result.job_id,))
+       conn.execute("INSERT INTO history (job_id, repository, job_name, job_result, job_run_time, job_start_time) VALUES (?,?,?,?,?,?)", (result.job_id, result.repository, result.job_name, result.job_result, result.job_run_time, result.job_start_time))
+     
+     conn.commit()
   
+  def init_db(self):
+    conn = sqlite3.connect(self.sqlite_db)
+    conn.execute("""CREATE TABLE IF NOT EXISTS history (
+      job_id INTEGER PRIMARY KEY NOT NULL,
+      repository TEXT NOT NULL,
+      job_name TEXT NOT NULL,
+      job_result TEXT,
+      job_run_time INTEGER,
+      job_start_time TEXT NOT NULL
+    )""")
+    conn.close()
 

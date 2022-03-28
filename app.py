@@ -10,28 +10,14 @@ import json
 
 import flask
 from flask import Flask, render_template, request, Response
-from flaskext.mysql import MySQL
+import sqlite3
 from report import Report
 
 def create_app():
   app = Flask(__name__)
-  mysql = MySQL()
-  report = Report(mysql)
-  app.config['MYSQL_HOST'] = os.environ.get('MYSQL_HOST')
-  app.config['MYSQL_USER'] = os.environ.get('MYSQL_USER')
-  app.config['MYSQL_PASSWORD'] = os.environ.get('MYSQL_PASSWORD')
-  app.config['MYSQL_DB'] = os.environ.get('MYSQL_DB')
-  mysql.init_app(app)
+  app.config['SQLITE3_DB'] = os.environ.get('SQLITE3_DB')
+  report = Report()  
   report.init_app(app)
-  return setup(app, mysql, report)
-
-def create_test_app(mysql, report):
-  app = Flask(__name__)
-  mysql.init_app(app)
-  report.init_app(app)
-  return setup(app, mysql, report)
-
-def setup(app, mysql, report):
 
   @app.route("/")
   def index_page():
@@ -47,18 +33,7 @@ def setup(app, mysql, report):
   
   @app.cli.command("initdb")
   def init_db():
-    conn = mysql.connect()
-    cursor = conn.cursor()
-    cursor.execute("""CREATE TABLE history (
-      job_id INTEGER() NOT NULL,
-      repository VARCHAR(255) NOT NULL,
-      job_name VARCHAR(255) NOT NULL,
-      job_result VARCHAR(80) NOT NULL,
-      job_run_time INTEGER,
-      job_start_time DATETIME NOT NULL,
-      PRIMARY KEY (job_id),
-      INDEX(repository, start_time)
-    )""")
+    report.init_db()
       
   
   @app.cli.command("import_history")
