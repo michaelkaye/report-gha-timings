@@ -38,13 +38,22 @@ class Report:
   def set_db(self, sqlite_db):
      self.sqlite_db = sqlite_db
   
-  def diff_times(self, start, end):
+  def get_time(self, time):
      FORMAT="%Y-%m-%dT%H:%M:%S.%fZ"
+     ALT_FORMAT="%Y-%m-%dT%H:%M:%SZ"
+     if time == None:
+        return None
+     try:
+        return datetime.strptime(time, FORMAT)
+     except:
+        return datetime.strptime(time, ALT_FORMAT)
+       
+  def diff_times(self, start, end):
      if end == None:
         return None
      else:
-        a = datetime.strptime(start, FORMAT)
-        b = datetime.strptime(end, FORMAT)
+        a = self.get_time(start)
+        b = self.get_time(end)
         return (int)((b-a).total_seconds())
   
   def parse(self, json):
