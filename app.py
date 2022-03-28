@@ -29,8 +29,9 @@ def create_app():
     json = request.json
     result = report.parse(json)
     if result is not None:
+      print(f"Writing data {result}")
       report.write(result)
-      return "{}"
+      return '{"found":"valid result"}'
     else:
       return '{"found":"no workflow_job"}'
   

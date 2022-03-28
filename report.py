@@ -59,6 +59,9 @@ class Report:
   def parse(self, json):
      if not 'workflow_job' in json:
          return None
+     job_status = json['workflow_job']['status']
+     if job_status != 'completed':
+         return None
 
      repository = json['repository']['full_name']
      job_id = json['workflow_job']['id']
